@@ -1,1 +1,55 @@
 
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+from pyspark.sql.window import Window
+import pyspark.sql.functions as F
+
+spark = SparkSession.builder.getOrCreate()
+
+data = [
+  ("maharashtra", "mumbai", "anil", 120000,"jan"),
+  ("maharashtra", "mumbai", "sunita", 125000, "jan"),
+  ("maharashtra", "mumbai", "raj", 125000,"jan"),
+  ("maharashtra", "mumbai", "priya", 110000,"jan"),
+  ("maharashtra", "pune", "amit", 95000, "jan"),
+  ("maharashtra", "pune", "sneha", 98000,"jan"),
+  ("maharashtra", "pune", "vikas", 98000, "jan"),
+  ("karnataka", "bengaluru", "kiran", 130000, "jan"),
+  ("karnataka", "bengaluru", "ravi", 128000, "jan"),
+  ("karnataka", "bengaluru", "pooja", 128000, "jan"),
+  ("karnataka", "bengaluru", "Divya", 127000, "jan"),
+  ("tamilnadu", "chennai", "hari", 90000, "jan"),
+  ("tamilnadu", "chennai", "mani", 92000, "jan"),
+  ("tamilnadu", "chennai", "radha", 89000,"jan"),
+]
+
+columns = ["state", "city", "sales_person", "total_sales", "month"]
+
+df = spark.createDataFrame(data, columns)
+df.show()
+
+# Define window
+window_spec = Window.partitionBy("state", "city", "month") \
+                       .orderBy(F.desc("total_sales"))
+
+
+#add dense rank
+df_ranked = df.withColumn("rank_in_city",
+ F.dense_rank().over(window_spec))
+
+
+#filter top 3 ranks only
+df_top3 = df_ranked.filter(col("rank_in_city") < 3)
+
+#final output - stored as requested
+df_top3.orderBy("state", "city", "month", "rank_in_city").show()
+
+
+
+
+
+
+
+
+
+
